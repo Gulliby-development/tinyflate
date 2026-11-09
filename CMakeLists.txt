@@ -1,0 +1,31 @@
+cmake_minimum_required(VERSION 3.16)
+project(tinyflate LANGUAGES C)
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
+
+if(MSVC)
+  add_compile_options(/W4 /WX /utf-8)
+  add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+else()
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+endif()
+
+file(GLOB TF_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/*.c")
+list(REMOVE_ITEM TF_SOURCES "${CMAKE_SOURCE_DIR}/src/main.c")
+add_library(tinyflate_lib STATIC ${TF_SOURCES})
+target_include_directories(tinyflate_lib PUBLIC "${CMAKE_SOURCE_DIR}/src")
+
+add_executable(tinyflate "${CMAKE_SOURCE_DIR}/src/main.c")
+target_link_libraries(tinyflate PRIVATE tinyflate_lib)
+
+enable_testing()
+file(GLOB TF_TESTS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/*_test.c")
+foreach(test_source ${TF_TESTS})
+  get_filename_component(test_name "${test_source}" NAME_WE)
+  add_executable(${test_name} "${test_source}")
+  target_link_libraries(${test_name} PRIVATE tinyflate_lib)
+  target_include_directories(${test_name} PRIVATE "${CMAKE_SOURCE_DIR}/tests")
+  add_test(NAME ${test_name} COMMAND ${test_name})
+endforeach()

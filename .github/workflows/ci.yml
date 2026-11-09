@@ -1,0 +1,17 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+      - run: cmake --build build --config Debug
+      - run: ctest --test-dir build -C Debug --output-on-failure
+      # clang-format versions differ per runner image (18 on ubuntu-24.04, 21 here): checked on one OS only
+      - if: matrix.os == 'ubuntu-latest'
+        run: clang-format --dry-run --Werror $(git ls-files '*.c' '*.h')
